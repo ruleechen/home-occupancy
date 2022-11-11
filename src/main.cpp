@@ -5,6 +5,9 @@
 #include <GlobalHelpers.h>
 #include <Button/ActionButtonInterrupt.h>
 
+#include "OccupancyStorage.h"
+#include "OccupancySensor.h"
+
 using namespace Victor;
 using namespace Victor::Components;
 
@@ -15,7 +18,10 @@ extern "C" homekit_characteristic_t accessorySerialNumber;
 extern "C" homekit_server_config_t serverConfig;
 
 AppMain* appMain = nullptr;
+bool connective = false;
+
 ActionButtonInterrupt* button = nullptr;
+OccupancySensor* sensor = nullptr;
 
 String hostName;
 String serialNumber;
@@ -32,10 +38,10 @@ String toOccupancyName(const uint8_t state) {
   );
 }
 
-void setOccupancyState(const Occupancy value, const bool notify) {
+void setOccupancyState(const bool value, const bool notify) {
   ESP.wdtFeed();
   builtinLed.flash();
-  occupancyState.value.uint8_value = value;
+  occupancyState.value.uint8_value = value ? OCCUPANCY_DETECTED : OCCUPANCY_NOT_DETECTED;
   if (notify) {
     homekit_characteristic_notify(&occupancyState, occupancyState.value);
   }
@@ -80,8 +86,15 @@ void setup(void) {
   accessorySerialNumber.value.string_value = const_cast<char*>(serialNumber.c_str());
   arduino_homekit_setup(&serverConfig);
 
-  // connect button
+  // connect occupancy sensor
   const auto occupancySetting = occupancyStorage.load();
+  if (occupancySetting->sensorPin > -1) {
+    sensor = new OccupancySensor();
+    sensor->onStateChange = [](const bool state) { setOccupancyState(state, connective); };
+    setOccupancyState(sensor->readState(), connective);
+  }
+
+  // connect button
   if (occupancySetting->buttonPin > -1) {
     button = new ActionButtonInterrupt(occupancySetting->buttonPin, occupancySetting->buttonTrueValue);
     button->onAction = [](const ButtonAction action) {
@@ -102,10 +115,6 @@ void setup(void) {
       }
     };
   }
-  // connect occupancy sensor
-  if (occupancySetting.inputPin > -1) {
-    setOccupancyState(true ? OCCUPANCY_DETECTED : OCCUPANCY_NOT_DETECTED, false);
-  }
 
   // done
   console.log()
@@ -116,8 +125,12 @@ void setup(void) {
 void loop(void) {
   arduino_homekit_loop();
   const auto isPaired = arduino_homekit_get_running_server()->paired;
-  const auto connective = victorWifi.isLightSleepMode() && isPaired;
+  connective = victorWifi.isLightSleepMode() && isPaired;
   appMain->loop(connective);
+  // sensor
+  if (sensor != nullptr) {
+    sensor->loop();
+  }
   // button
   if (button != nullptr) {
     button->loop();
