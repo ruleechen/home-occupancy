@@ -26,18 +26,18 @@ homekit_service_t informationService = HOMEKIT_SERVICE_(ACCESSORY_INFORMATION,
   },
 );
 
-// format: bool; HAP section 9.70; true = On, false = Off
-homekit_characteristic_t onState = HOMEKIT_CHARACTERISTIC_(ON, false);
-// format: bool; HAP section 9.69; true = On, false = Off
-homekit_characteristic_t inUseState = HOMEKIT_CHARACTERISTIC_(OUTLET_IN_USE, false);
+// format: uint8; HAP section 9.67; 0 = Occupancy is not detected, 1 = Occupancy is detected
+homekit_characteristic_t occupancyState = HOMEKIT_CHARACTERISTIC_(OCCUPANCY_DETECTED, false);
+// format: bool; HAP section 9.96; true or false
+homekit_characteristic_t activeState = HOMEKIT_CHARACTERISTIC_(STATUS_ACTIVE, false);
 // format: string; HAP section 9.62; maximum length 64
-homekit_characteristic_t nameState = HOMEKIT_CHARACTERISTIC_(NAME, "Outlet");
+homekit_characteristic_t nameState = HOMEKIT_CHARACTERISTIC_(NAME, "Occupancy");
 
-homekit_service_t stateService = HOMEKIT_SERVICE_(OUTLET,
+homekit_service_t stateService = HOMEKIT_SERVICE_(OCCUPANCY_SENSOR,
   .primary = true,
   .characteristics = (homekit_characteristic_t*[]) {
-    &onState,
-    &inUseState,
+    &occupancyState,
+    &activeState,
     &nameState,
     NULL,
   },
@@ -46,7 +46,7 @@ homekit_service_t stateService = HOMEKIT_SERVICE_(OUTLET,
 homekit_accessory_t* accessories[] = {
   HOMEKIT_ACCESSORY(
     .id = 1,
-    .category = homekit_accessory_category_outlet,
+    .category = homekit_accessory_category_sensor,
     .services = (homekit_service_t*[]) {
       &informationService,
       &stateService,
