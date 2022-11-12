@@ -3,27 +3,35 @@ const path = require("path");
 const fse = require("fs-extra");
 const del = require("del");
 const gulp = require("gulp");
+const ignore = require("ignore");
+
+const PATH_ROOT = path.resolve(__dirname, "./");
+const PATH_DEPS = path.resolve(__dirname, "./.pio/libdeps");
+
+const DIR_DATA = "data";
+const DIR_DATA_WEB = path.resolve(DIR_DATA, "web");
+
+const ig = ignore();
+ig.add(fse.readFileSync(path.join(__dirname, ".gitignore")).toString());
 
 const {
   argv: { pioEnv },
 } = yargs.string("pioEnv");
 
-const paths = {
-  dist: "data/web",
-};
-
 function clean() {
-  return del([paths.dist], { force: true });
+  return del([DIR_DATA_WEB], { force: true });
 }
 
 function buildDeps() {
-  const rootDir = path.resolve(__dirname, "./");
-  const libDeps = path.resolve(__dirname, "./.pio/libdeps");
-  if (fse.existsSync(libDeps)) {
-    const libDir = path.resolve(libDeps, pioEnv, "home-esp8266/data");
+  if (fse.existsSync(PATH_DEPS)) {
+    const libDir = path.resolve(PATH_DEPS, pioEnv, "home-esp8266", DIR_DATA);
     if (fse.existsSync(libDir)) {
-      fse.copySync(libDir, path.resolve(rootDir, "data"), {
+      fse.copySync(libDir, path.resolve(PATH_ROOT, DIR_DATA), {
         overwrite: true,
+        filter: (src, dest) => {
+          const relDest = path.relative(__dirname, dest);
+          return relDest === DIR_DATA || ig.ignores(relDest);
+        },
       });
     }
   }
