@@ -91,7 +91,10 @@ void setup(void) {
   const auto occupancySetting = occupancyStorage.load();
   if (occupancySetting->sensorPin > -1) {
     sensor = new OccupancySensor();
-    sensor->onStateChange = [](const bool state) { setOccupancyState(state, connective); };
+    sensor->onStateChange = [](const bool state) {
+      setOccupancyState(state, connective);
+      setActiveState(true, connective);
+    };
     setOccupancyState(sensor->readState(), connective);
   }
 
