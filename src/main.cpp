@@ -3,7 +3,6 @@
 
 #include <AppMain/AppMain.h>
 #include <GlobalHelpers.h>
-#include <Button/ActionButtonInterrupt.h>
 
 #include "OccupancyStorage.h"
 #include "OccupancySensor.h"
@@ -20,7 +19,6 @@ extern "C" homekit_server_config_t serverConfig;
 AppMain* appMain = nullptr;
 bool connective = false;
 
-ActionButtonInterrupt* button = nullptr;
 OccupancySensor* sensor = nullptr;
 
 String hostName;
@@ -98,28 +96,6 @@ void setup(void) {
     setOccupancyState(sensor->readState(), connective);
   }
 
-  // connect button
-  if (occupancySetting->buttonPin > -1) {
-    button = new ActionButtonInterrupt(occupancySetting->buttonPin, occupancySetting->buttonTrueValue);
-    button->onAction = [](const ButtonAction action) {
-      console.log()
-        .bracket(F("button"))
-        .section(F("action"), String(action));
-      if (action == BUTTON_ACTION_PRESSED) {
-        builtinLed.flash();
-      } else if (action == BUTTON_ACTION_DOUBLE_PRESSED) {
-        builtinLed.flash(500);
-        const auto enable = victorWifi.isLightSleepMode();
-        victorWifi.enableAP(enable); // toggle enabling ap
-      } else if (action == BUTTON_ACTION_PRESSED_HOLD_L1) {
-        ESP.restart();
-      } else if (action == BUTTON_ACTION_PRESSED_HOLD_L2) {
-        homekit_server_reset();
-        ESP.restart();
-      }
-    };
-  }
-
   // done
   console.log()
     .bracket(F("setup"))
@@ -134,9 +110,5 @@ void loop(void) {
   // sensor
   if (sensor != nullptr) {
     sensor->loop();
-  }
-  // button
-  if (button != nullptr) {
-    button->loop();
   }
 }

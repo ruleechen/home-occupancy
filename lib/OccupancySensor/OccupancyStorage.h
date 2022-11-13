@@ -6,14 +6,6 @@
 namespace Victor::Components {
 
   struct OccupancySetting {
-    // button input pin
-    // 0~127 = gpio
-    //    -1 = disabled
-    int8_t buttonPin = -1; // (-128~127)
-    // 0 = LOW
-    // 1 = HIGH
-    uint8_t buttonTrueValue = 0; // (0~255)
-
     // sensor input pin
     // 0~127 = gpio
     //    -1 = disabled
