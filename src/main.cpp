@@ -41,11 +41,12 @@ String toOccupancyName(const uint8_t state) {
 void setOccupancyState(const bool value, const bool notify) {
   ESP.wdtFeed();
   builtinLed.flash();
-  occupancyState.value.uint8_value = value ? OCCUPANCY_DETECTED : OCCUPANCY_NOT_DETECTED;
+  const auto occupancy = value ? OCCUPANCY_DETECTED : OCCUPANCY_NOT_DETECTED;
+  occupancyState.value.uint8_value = occupancy;
   if (notify) {
     homekit_characteristic_notify(&occupancyState, occupancyState.value);
   }
-  console.log().section(F("occupancy"), GlobalHelpers::toOnOffName(value));
+  console.log().section(F("occupancy"), toOccupancyName(occupancy));
 }
 
 void setActiveState(const bool value, const bool notify) {
